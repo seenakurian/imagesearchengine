@@ -1,0 +1,153 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+from django.http import HttpResponse
+from django.shortcuts import render
+from  schoolbook.models import *
+from django.core.mail import send_mail
+from django.core.mail import EmailMessage
+from django.core.files.storage import FileSystemStorage
+import datetime
+from random import random
+from searcher import *
+# Create your views here.
+def home(request):
+    return render(request,"index.html",{})
+def homelog(request):
+    return render(request,"home.html",{})
+def registerR(request):
+    return render(request,"registration.html",{})
+
+def loginR(request):
+    return render(request,"login.html",{})
+
+def register(request):
+    fn=request.POST.get("firstN")
+    ln=request.POST.get("lastN")
+    email=request.POST.get("email")
+    phone=request.POST.get("phone")
+    un=request.POST.get("username")
+    pa=request.POST.get("password")
+    obj=student(firstname=fn,lastname=ln,email=email,phoneno=phone,username=un,password=pa,Type='1')
+    obj.save()
+   
+    return render(request,"login.html",{})
+
+
+def login(request):
+    print 'login'
+    try:
+       un=request.POST.get("username")
+       pa=request.POST.get("password")
+       obj=student.objects.get(username=un,password=pa)
+       print obj.Type,un,pa
+       if obj.Type=='0':
+            request.session['iid']=obj.id
+            obj2=student.objects.all()
+            return render(request,"adminhome.html",{"data":obj2})
+       else :  
+           request.session['iid']=obj.id
+           return render(request,"home.html",{})
+##           return render(request,"studenthome.html",{"data":obj})
+    except Exception,e:
+        print e
+        return render(request,"index.html",{})
+     
+def reg(request):
+    return render(request,"registration.html",{})
+def profile(request):
+      obj1 = student.objects.get(id=int(request.session["iid"])) 
+      return render(request,"studenthome.html",{"data":obj1})
+
+
+def studenthome(request):
+    return render(request,"studenthome.html",{})
+
+##def listI(request):
+##    kk=filetb.objects.filter(userid=int(request.session["iid"]))
+####    for i in kk:
+####       print kk.filename
+####    obj1 = student.objects.get(id=int(request.session["iid"])) 
+##    return render(request,"listimages.html",{"data":kk})
+##
+
+
+
+def update(request):
+    fn=request.POST.get("firstN")
+    ln=request.POST.get("lastN")
+    email=request.POST.get("email")
+    phone=request.POST.get("phone")
+    print "In updateeeeee"
+    obj=student.objects.filter(id=int(request.session["iid"])).update(firstname=fn,lastname=ln,email=email,phoneno=phone)
+    obj1 = student.objects.get(id=int(request.session["iid"])) 
+    return render(request,"studenthome.html",{"data":obj1})
+
+
+##    res = send_mail("hello paul", "comment tu vas?", "paul@polo.com", [e])
+##    return render(request,"studenthome.html",{})
+
+def loadfile(request):
+    n=request.POST.get("na")
+    Iid=int(request.session["iid"])
+    print n
+    obj=request.FILES["filename"]
+    if obj:
+##    fs=obj.filesystem("static\\")
+##    myfile = request.FILES['myfile']
+        fs = FileSystemStorage("schoolbook\\static\\images\\")
+        nam1=random()
+        print nam1
+##        +obj.name
+        nam2=str(nam1)
+        nam=nam2[0:4] +obj.name
+        
+        print nam,obj.name,obj
+        fs.save(nam,obj)
+    ##    uploaded_file_url = fs.url(fname)
+       
+       
+        obj1=filetb(userid=int(request.session["iid"]),filename=nam)
+       
+        
+    #1.save()
+        return render(request,"home.html",{})
+    else:
+        return HttpResponse("Error") 
+
+##response = HttpResponse(my_data, content_type='application/vnd.ms-excel')
+##response['Content-Disposition'] = 'attachment; filename="foo.xls"'
+
+def logout(request):
+    try:
+        if(request.session["iid"]):
+              print "kkkkk"
+              del request.session["iid"]
+              return render(request,"index.html",{})
+    except:
+       return render(request,"index.html",{})
+
+def about(request):
+    return render(request,"about.html",{})
+def change(request):
+    return render(request,"changepassword.html",{})
+def passwordchange(request):
+    old=request.POST.get("old")
+    new=request.POST.get("newpassword")
+    print old,new
+    obj=student.objects.get(password=old)
+    obj.password=new
+    obj.save()
+    return render(request,"changepassword.html",{})
+def forgot(request):
+    return render(request,"forgotpassword.html",{})
+def getpass(request):
+    old=request.POST.get("email")
+    print old
+##    new=request.POST.get("newpassword")
+    obj=student.objects.get(email=old)
+    print obj.password
+    res = send_mail("hello paul",obj.password , "mrsophiya@gmail.com",["mrsophiya@gmail.com"])
+    print 'send'
+    return render(request,"forgotpassword.html",{})
+    
+
